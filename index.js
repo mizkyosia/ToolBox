@@ -2,10 +2,25 @@ require('dotenv').config();
 const fs = require('fs');
 const Dsc = require('discord.js');
 
-const client = new Dsc.Client({ partials: [Dsc.Partials.Channel, Dsc.Partials.Reaction, Dsc.Partials.GuildMember], intents: ["Guilds", "GuildMembers"] });
+const client = new Dsc.Client({
+    partials: [
+        Dsc.Partials.Channel,
+        Dsc.Partials.Reaction,
+        Dsc.Partials.GuildMember,
+        Dsc.Partials.Message
+    ],
+    intents: [
+        Dsc.GatewayIntentBits.Guilds,
+        Dsc.GatewayIntentBits.GuildMembers,
+        Dsc.GatewayIntentBits.GuildMessages,
+        Dsc.GatewayIntentBits.MessageContent,
+        Dsc.GatewayIntentBits.DirectMessages,
+    ]
+});
+client.color = 0x5865F2;
 
-client.login(process.env.TOKEN)
-client.on("ready", initCommands)
+client.login(process.env.TOKEN);
+client.on("ready", initCommands);
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isCommand()) {
         try {
@@ -14,17 +29,18 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.reply({ content: 'An internal problem has occured while running this command. Please try again later' })
             console.log(e);
         }
-    } else if (interaction.isButton()) {
-        const a = interaction.customId.split(' '), c = a.shift();
+    } else if (interaction.isButton() || interaction.isAnySelectMenu()) {
+        var a = interaction.customId.split(' '), c = a.shift();
+        if(interaction.isAnySelectMenu()) a = a.concat(interaction.values);
         try {
-            require(`./interactions/buttons/${c}`).execute(interaction, a, Dsc, client);
+            require(`./interactions/${c}`).execute(interaction, a, Dsc, client);
         } catch (e) {
             await interaction.reply({ content: 'An internal problem has occured while running this command. Please try again later' })
             console.log(e);
         }
     }
-    else console.log('Interaction');
-})
+    else console.log('Interaction : ', interaction);
+});
 
 function initCommands() {
     console.log('\x1b[35m%s\x1b[0m', 'Slash command registering start\n');

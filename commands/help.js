@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders'), fs = require('fs');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder } = require('@discordjs/builders'), fs = require('fs');
 
 const cmdNames = fs.readdirSync(`./commands/`).filter(file => file.endsWith('.js')).map(f => {return {name:f.replace('.js', ''), value: f.replace('.js', '')}});
 
@@ -21,7 +21,7 @@ module.exports = {
     async execute(interaction, Dsc, client) {
         await interaction.deferReply();
         if(interaction.options.getSubcommand() === 'command'){
-            const cmd = require(`./${interaction.options.getString('nom')}`)
+            const cmd = require(`./${interaction.options.getString('name')}`)
             if(!cmd) return interaction.editReply({ content: `Sorry, the command ${interaction.options.getString('name')} is invalid`})
             return await interaction.editReply({ embeds: [{
                 title: `Commande ${cmd.data.name}`,
@@ -33,6 +33,12 @@ module.exports = {
                 }
             }], ephemeral: true });
         }
-        await interaction.editReply({ content: `General help`, ephemeral: true });
+
+        const row = new ActionRowBuilder();
+        row.addComponents(
+            new ButtonBuilder().setCustomId('help -1').setLabel('Previous page').setEmoji({name:'◀️'}).setDisabled(true).setStyle(Dsc.ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('help 1').setLabel('Next page').setEmoji({name:'◀️'}).setDisabled(cmdNames.length <= 10).setStyle(Dsc.ButtonStyle.Secondary)
+        );
+        await interaction.editReply({ content: `General help`, components: [row], ephemeral: true });
     }
 }

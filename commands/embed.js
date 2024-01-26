@@ -9,11 +9,11 @@ module.exports = {
         .addStringOption(o => o.setName('url').setDescription('Embed URL (Title link)'))
         .addStringOption(o => o.setName('color').setDescription('Embed color (HEX with the #)').setMaxLength(7).setMinLength(7))
         .addStringOption(o => o.setName('image').setDescription('Embed image URL'))
-        .addStringOption(o => o.setName('footer_text').setDescription('Embed footer text'))
-        .addStringOption(o => o.setName('footer_icon').setDescription('Embed footer image URL'))
-        .addStringOption(o => o.setName('author_name').setDescription('Embed author name'))
-        .addStringOption(o => o.setName('author_url').setDescription('Embed author link'))
-        .addStringOption(o => o.setName('author_icon').setDescription('Embed author icon URL'))
+        .addStringOption(o => o.setName('footer-text').setDescription('Embed footer text'))
+        .addStringOption(o => o.setName('footer-icon').setDescription('Embed footer image URL'))
+        .addStringOption(o => o.setName('author-name').setDescription('Embed author name'))
+        .addStringOption(o => o.setName('author-url').setDescription('Embed author link'))
+        .addStringOption(o => o.setName('author-icon').setDescription('Embed author icon URL'))
         .addBooleanOption(o => o.setName('timestamp').setDescription('Embed creation timestamp')),
     async execute(interaction, Dsc, client) {
         await interaction.deferReply({ephemeral:true});

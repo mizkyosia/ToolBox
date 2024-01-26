@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, range } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const convert = require('color-convert');
 
 module.exports = {
@@ -21,7 +21,6 @@ module.exports = {
             return await interaction.editReply({ content:s});
         } else if(interaction.options.getSubcommand() == 'color') {
             let c = [Math.round(randomBetween(0,255)),Math.round(randomBetween(0,255)),Math.round(randomBetween(0,255))];
-            convert.rgb.ansi16
             return await interaction.editReply({ embeds:[{
                 title:'#' + convert.rgb.hex(c),
                 color:parseInt(convert.rgb.hex(c),16),

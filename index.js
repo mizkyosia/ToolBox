@@ -31,7 +31,7 @@ client.on('interactionCreate', async (interaction) => {
         }
     } else if (interaction.isButton() || interaction.isAnySelectMenu()) {
         var a = interaction.customId.split(' '), c = a.shift();
-        if(interaction.isAnySelectMenu()) a = a.concat(interaction.values);
+        if(interaction.isAnySelectMenu()) a = a.concat(interaction.values.reduce((p, c) => p.concat(c.split(' ')), []));
         try {
             require(`./interactions/${c}`).execute(interaction, a, Dsc, client);
         } catch (e) {

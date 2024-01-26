@@ -45,14 +45,19 @@ module.exports = {
         ),
 
     async execute(interaction, Dsc, client) {
-        await interaction.deferReply();
+        await interaction.deferReply({ephemeral: true});
 
         if (interaction.options.getSubcommand() == 'name-map') {
-            const msgData = this.nameMap(
+            var chosenName = interaction.options.getString('name');
+            if(chosenName) chosenName = chosenName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const msgData = await this.nameMap(
                     interaction, Dsc, client,
                     interaction.options.getString('country', true),
-                    interaction.options.getString('name')?.toLowerCase(),
-                    interaction.options.getString('color-mode', true)
+                    chosenName,
+                    interaction.options.getBoolean('allow-clues') ?? false,
+                    interaction.options.getBoolean('allow-answer') ?? false,
+                    interaction.options.getString('color-mode', true),
+                    true
                 )
             if(!msgData || msgData?.length != 2) return;
             const message =  await interaction.channel.send(msgData[1]);
@@ -70,30 +75,30 @@ module.exports = {
             collector.on('collect', async (m) => {
                 if (!m.content.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(msgData[0])) return;
                 found = true;
-                m.reply({ content: `GG, you found the name !\nIt was \`${msgData[0]}\`` });
+                m.reply({ content: `GG, you found the name !\nIt was \`${msgData[0]}\`\nAll it took was ${collector.collected.size} attempts !` });
                 collector.stop();
                 thread.setLocked(true);
             });
     
             collector.on('end', async (collected) => {
                 if (found) return;
-                await thread.send({ content: `Time's up ! Seems like nobody found the name...\nIt was \`${msgData[0]}\`` });
+                await thread.send({ content: `Time's up ! Seems like nobody found the name, even with ${collected.size} attempts...\nIt was \`${msgData[0]}\`` });
                 thread.setLocked(true);
             });
         }
 
     },
 
-    async nameMap(interaction, Dsc, client, country, chosenName, mode) {
+    async nameMap(interaction, Dsc, client, country, chosenName, allowClues, allowAnswer, mode, fromCommand) {
         if (interaction.channel.isThread()) return interaction.editReply({ content: 'This command must be used outside of a thread !', ephemeral: true });
         const countryDB = new QuickDB({ filePath: './resources/geographical/geo.sqlite' }).table(country),
             params = await countryDB.get(`params`),
             existingNames = await countryDB.get(`existingNames`);
 
         if (!chosenName) chosenName = existingNames[Math.floor(Math.random() * existingNames.length)];
-        if (!existingNames.find(n => n == chosenName)) return interaction.reply({ content: 'This name is invalid !', ephemeral: true });
+        if (!existingNames.find(n => n == chosenName)) return interaction.editReply({ content: 'This name is invalid !', ephemeral: true });
         
-        interaction.editReply({ content: 'The game will start in a few moments', ephemeral: true });
+        if(fromCommand) interaction.editReply({ content: 'The game will start in a few moments', ephemeral: true });
 
         const nameData = await countryDB.get(`names.${chosenName}`),
             globalData = await countryDB.get(`births`),
@@ -162,12 +167,12 @@ module.exports = {
         }).getShortUrl();
 
         const thresholds = [];
-        for (let i = 0; i < colors.length; i++) thresholds.push(maxDeptVal * i / 5);
+        for (let i = 0; i < colors.length; i++) thresholds.push(Math.round(((maxDeptVal * i / 5) + Number.EPSILON) * 10000) / 10000);
 
         const comp = [
             new Dsc.ActionRowBuilder().addComponents(
                 new Dsc.StringSelectMenuBuilder()
-                    .setCustomId(`game name-map ${country} ${chosenName}`)
+                    .setCustomId(`game name-map ${country} ${chosenName} ${allowClues} ${allowAnswer}`)
                     .addOptions(
                         {
                             label: 'Percentages',
@@ -182,7 +187,7 @@ module.exports = {
                     )
             ),
         ]
-        if (interaction.options.getBoolean('allow-clues')) comp.push(
+        if (allowClues && allowClues != 'false') comp.push(
             new Dsc.ActionRowBuilder().addComponents(
                 new Dsc.StringSelectMenuBuilder()
                     .setCustomId('p e')
@@ -199,11 +204,19 @@ module.exports = {
                         {
                             label: 'Random letter',
                             value: 'r ' + chosenName
+                        },
+                        {
+                            label: 'Sex',
+                            value: 'Sex of the name : ' + nameData.sex
+                        },
+                        {
+                            label: 'Number of letters',
+                            value: 'Number of letters : ' + chosenName.length
                         }
                     )
             )
         );
-        if (interaction.options.getBoolean('allow-answer')) comp.push(
+        if (allowAnswer && allowAnswer != 'false') comp.push(
             new Dsc.ActionRowBuilder().addComponents(
                 new Dsc.ButtonBuilder().setLabel('Show answer').setStyle(Dsc.ButtonStyle.Secondary)
                     .setCustomId('p e The name is : ' + chosenName)
